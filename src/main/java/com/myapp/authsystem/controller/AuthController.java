@@ -1,11 +1,17 @@
 package com.myapp.authsystem.controller;
 
+import com.myapp.authsystem.dto.ApiResponse;
 import com.myapp.authsystem.dto.LoginRequest;
 import com.myapp.authsystem.dto.RegisterRequest;
+import com.myapp.authsystem.exception.InvalidCredentialsException;
 import com.myapp.authsystem.service.AuthService;
+
+import jakarta.validation.Valid;
+
 import com.myapp.authsystem.config.security.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,25 +35,28 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
-        return ResponseEntity.ok("Usuário registrado com sucesso!");
+        return ResponseEntity.ok(ApiResponse.success("Usuário registrado com sucesso!", null));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
-        );
+    public ResponseEntity<ApiResponse<Map<String, String>>> login(@Valid @RequestBody LoginRequest request) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+            );
 
-        String accessToken = jwtUtil.generateAccessToken(request.email());
-        String refreshToken = jwtUtil.generateRefreshToken(request.email());
+            String accessToken = jwtUtil.generateAccessToken(request.email());
 
-        Map<String, String> response = new HashMap<>();
-        response.put("accessToken", accessToken);
-        response.put("refreshToken", refreshToken);
-        response.put("tokenType", "Bearer");
+            Map<String, String> data = new HashMap<>();
+            data.put("accessToken", accessToken);
+            data.put("tokenType", "Bearer");
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Login realizado com sucesso", data));
+
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException("Email ou senha inválidos");
+        }
     }
 }
