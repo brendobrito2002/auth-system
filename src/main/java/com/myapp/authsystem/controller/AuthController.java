@@ -2,42 +2,21 @@ package com.myapp.authsystem.controller;
 
 import com.myapp.authsystem.dto.ApiResponse;
 import com.myapp.authsystem.dto.LoginRequest;
+import com.myapp.authsystem.dto.LoginResponse;
 import com.myapp.authsystem.dto.RegisterRequest;
-import com.myapp.authsystem.exception.InvalidCredentialsException;
-import com.myapp.authsystem.model.entity.User;
-import com.myapp.authsystem.repository.UserRepository;
 import com.myapp.authsystem.service.AuthService;
-
 import jakarta.validation.Valid;
-
-import com.myapp.authsystem.config.security.JwtUtil;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtUtil jwtUtil;
-    private final AuthenticationManager authenticationManager;
-    private final UserRepository userRepository;
 
-    public AuthController(AuthService authService, 
-                          JwtUtil jwtUtil, 
-                          AuthenticationManager authenticationManager,
-                          UserRepository userRepository) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.jwtUtil = jwtUtil;
-        this.authenticationManager = authenticationManager;
-        this.userRepository = userRepository;
     }
 
     @PostMapping("/register")
@@ -47,24 +26,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, String>>> login(@Valid @RequestBody LoginRequest request) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
-            );
-
-            User user = userRepository.findByEmail(request.email())
-                    .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
-
-            String accessToken = jwtUtil.generateAccessToken(user);
-
-            Map<String, String> data = new HashMap<>();
-            data.put("accessToken", accessToken);
-            data.put("tokenType", "Bearer");
-
-            return ResponseEntity.ok(ApiResponse.success("Login realizado com sucesso", data));
-        } catch (BadCredentialsException e) {
-            throw new InvalidCredentialsException("Email ou senha inválidos");
-        }
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse data = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Login realizado com sucesso", data));
     }
 }
