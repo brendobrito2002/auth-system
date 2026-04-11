@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.function.Function;
 
 @Component
 public class JwtUtil {
@@ -33,15 +34,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateAccessToken(String email) {
-        return Jwts.builder()
-                .subject(email)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
-                .signWith(getSigningKey())
-                .compact();
-    }
-
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -54,9 +46,8 @@ public class JwtUtil {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
-    private <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        return claimsResolver.apply(extractAllClaims(token));
     }
 
     private Claims extractAllClaims(String token) {
@@ -68,8 +59,7 @@ public class JwtUtil {
     }
 
     public boolean isTokenValid(String token, String email) {
-        final String extractedEmail = extractEmail(token);
-        return extractedEmail.equals(email) && !isTokenExpired(token);
+        return extractEmail(token).equals(email) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
