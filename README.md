@@ -25,7 +25,7 @@ Sistema de autenticação genérico desenvolvido como projeto de prática, com o
 Antes de executar, crie o arquivo `src/main/resources/application.properties` com o seguinte conteúdo:
 
 ```properties
-# Aplicação
+# Aplicacao
 spring.application.name=auth-system
 server.port=8080
 
