@@ -1,6 +1,7 @@
 package com.myapp.authsystem.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,26 @@ public class TestController {
         response.put("authorities", authentication.getAuthorities());
         response.put("authenticated", true);
 
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/user")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, Object>> userEndpoint(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Você acessou um endpoint de usuário comum!");
+        response.put("email", authentication.getName());
+        response.put("role", "USER");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> adminEndpoint(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Você acessou um endpoint de administrador!");
+        response.put("email", authentication.getName());
+        response.put("role", "ADMIN");
         return ResponseEntity.ok(response);
     }
 }
